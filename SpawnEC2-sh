@@ -1,0 +1,5 @@
+#!/bin/bash
+
+strStatus=$(curl -X POST 'https://kqltmgbquc.execute-api.us-east-1.amazonaws.com/SpawnEC2')
+
+echo "$strStatus"
