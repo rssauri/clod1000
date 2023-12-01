@@ -1,0 +1,59 @@
+import time
+import json
+import boto3
+
+#initialize variables
+ec2 = boto3.resource('ec2')
+client = boto3.client('ec2')
+
+def lambda_handler(event, context):
+    print ("Request received.. Start processing")
+    
+    #provision an EC2 instance and install nginx. 
+    #hardcode the values for now
+    print ("Creating EC2 instance")
+    instance = ec2.create_instances(
+        ImageId="ami-03ae24afdb6541606",
+        InstanceType="t2.micro",
+        KeyName="ckan",
+        SecurityGroupIds=["sg-030c2204e7022381e"],
+        SubnetId="subnet-0b1714ff6d3411f0b",
+        MaxCount=1,
+        MinCount=1,
+        UserData="IyEvYmluL2Jhc2gKc3VkbyBhcHQtZ2V0IHVwZGF0ZSAteQpzdWRvIGFwdC1nZXQgaW5zdGFsbCBuZ2lueCAteQpzdWRvIHNlcnZpY2Ugbmdpbnggc3RhcnQ="
+    )
+    print ("EC2 instance created: ", instance[0].id)
+   
+   
+    #wait until the instance is in running state, so that we can get the public DNS name
+    print ("Wait until instance is in running status")
+    waiter = client.get_waiter('instance_running')
+    waiter.wait(
+        InstanceIds=[instance[0].id],
+        WaiterConfig={
+            'Delay': 3,
+            'MaxAttempts': 100
+        }
+    )
+    print ("Instance is in Running state")
+    
+    
+    #get the public DNS name which will be used in the monitoring tool
+    response = client.describe_instances(InstanceIds=[instance[0].id])
+    dns = response['Reservations'][0]['Instances'][0]['PublicDnsName']
+   
+    
+    #return message
+    json_data = [
+        {
+            'serverName': dns, 
+            'instanceId': instance[0].id
+        }
+    ]
+    
+    print ("Processing complete")
+
+    return {
+        "statusCode": 200,
+        "body": json_data
+    }
