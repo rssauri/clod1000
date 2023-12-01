@@ -31,7 +31,7 @@ def lambda_handler(event, context):
     waiter.wait(
         InstanceIds=[instance[0].id],
         WaiterConfig={
-            'Delay': 3,
+            'Delay': 1,
             'MaxAttempts': 100
         }
     )
@@ -55,5 +55,5 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 200,
-        "body": json_data
+        "body": json.dumps(json_data)
     }
